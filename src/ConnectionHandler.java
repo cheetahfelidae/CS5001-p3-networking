@@ -8,9 +8,11 @@ public class ConnectionHandler extends Thread {
     private Socket conn;       // socket representing TCP/IP connection to Client
     private InputStream is;    // get data from client on this input stream
     private OutputStream os;   // can send data back to the client on this output stream
-    BufferedReader br;         // use buffered reader to read client data
+    private BufferedReader br;         // use buffered reader to read client data
+    private String document_root;
 
-    public ConnectionHandler(Socket conn) {
+    public ConnectionHandler(String document_root, Socket conn) {
+        this.document_root = document_root;
         this.conn = conn;
         try {
             is = conn.getInputStream();     // get data from client on this input stream
@@ -21,7 +23,7 @@ public class ConnectionHandler extends Thread {
         }
     }
 
-    public void run() { // run method is invoked when the Thread's start method (ch.start(); in Server class) is invoked
+    public void run() { // run method is invoked when the Thread's start method (ch.start(); in WebServer class) is invoked
         System.out.println("new ConnectionHandler thread started .... ");
         try {
             printClientData();
@@ -31,9 +33,9 @@ public class ConnectionHandler extends Thread {
         }
     }
 
-    public void sendResource() {
+    public void sendResource(String file_name) {
         try {
-            InputStream in = new FileInputStream("/Users/cheetah/Sites/CS5001-p3-networking/Resources/www/beer.jpg");
+            InputStream in = new FileInputStream(document_root + file_name);
             OutputStream out = conn.getOutputStream();
             copy(in, out);
             out.close();
@@ -60,16 +62,22 @@ public class ConnectionHandler extends Thread {
             // and shut down the connection on this side cleanly by throwing a DisconnectedException
             // which will be passed up the call stack to the nearest handler (catch block)
             // in the run method
-            if (line == null || line.equals("null") || line.equals(Configuration.exitString)) {
+            if (line == null) {
                 throw new DisconnectedException(" ... client has closed the connection ... ");
-            } else if (line.equalsIgnoreCase("keta")) {
-                sendResource();
+            } else {
+                PrintWriter out = new PrintWriter(conn.getOutputStream(), true);
+                out.println("HTTP/1.1 200 OK\r\n" +
+                        "Server: Simple Java Http Server\r\n" +
+                        "Content-Length: " + (new File(document_root + "page2.html").length()) + "\r\n" +
+                        "Content-Type: text/html\r\n");
+                sendResource("page2.html");
+                out.close();
             }
             // in this simple setup all the server does in response to messages from the client is to send
             // a single ACK byte back to client - the client uses this ACK byte to test whether the
             // connection to this server is still live, if not the client shuts down cleanly
-            os.write(Configuration.ackByte);
-            System.out.println("ConnectionHandler: " + line); // assuming no exception, print out line received from client
+//            os.write(Configuration.ack_byte);
+            System.out.println("> " + line); // assuming no exception, print out line received from client
         }
     }
 
