@@ -26,58 +26,31 @@ public class ConnectionHandler extends Thread {
     public void run() { // run method is invoked when the Thread's start method (ch.start(); in WebServer class) is invoked
         System.out.println("new ConnectionHandler thread started .... ");
         try {
-            printClientData();
+            handle_request();
         } catch (Exception e) { // exit cleanly for any Exception (including IOException, ClientDisconnectedException)
             System.out.println("ConnectionHandler:run " + e.getMessage());
             cleanup();     // cleanup and exit
         }
     }
 
-    public void sendResource(String file_name) {
-        try {
-            InputStream in = new FileInputStream(document_root + file_name);
-            OutputStream out = conn.getOutputStream();
-            copy(in, out);
-            out.close();
-            in.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void copy(InputStream in, OutputStream out) throws IOException {
-        byte[] buf = new byte[8192];
-        int len = 0;
-        while ((len = in.read(buf)) != -1) {
-            out.write(buf, 0, len);
-        }
-    }
-
-    private void printClientData() throws DisconnectedException, IOException {
+    private void handle_request() throws DisconnectedException, IOException {
         while (true) {
             String line = br.readLine(); // get data from client over socket
-            // if readLine fails we can deduce here that the connection to the client is broken
-            // and shut down the connection on this side cleanly by throwing a DisconnectedException
-            // which will be passed up the call stack to the nearest handler (catch block)
-            // in the run method
-            if (line == null) {
-                throw new DisconnectedException(" ... client has closed the connection ... ");
+
+            if (line != null) {
+                System.out.println("> " + line); // assuming no exception, print out line received from client
+                Response.respond(conn, line, document_root);
             } else {
-                PrintWriter out = new PrintWriter(conn.getOutputStream(), true);
-                out.println("HTTP/1.1 200 OK\r\n" +
-                        "Server: Simple Java Http Server\r\n" +
-                        "Content-Length: " + (new File(document_root + "page2.html").length()) + "\r\n" +
-                        "Content-Type: text/html\r\n");
-                sendResource("page2.html");
-                out.close();
+                // if readLine fails we can deduce here that the connection to the client is broken
+                // and shut down the connection on this side cleanly by throwing a DisconnectedException
+                // which will be passed up the call stack to the nearest handler (catch block)
+                // in the run method
+                throw new DisconnectedException(" ... client has closed the connection ... ");
             }
             // in this simple setup all the server does in response to messages from the client is to send
             // a single ACK byte back to client - the client uses this ACK byte to test whether the
             // connection to this server is still live, if not the client shuts down cleanly
 //            os.write(Configuration.ack_byte);
-            System.out.println("> " + line); // assuming no exception, print out line received from client
         }
     }
 
