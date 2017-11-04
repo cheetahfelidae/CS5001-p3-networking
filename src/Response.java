@@ -3,7 +3,6 @@ import constants.ResponseCode;
 
 import java.io.*;
 import java.net.Socket;
-import java.util.logging.Logger;
 
 import static constants.ContentType.*;
 import static constants.ResponseCode.*;
@@ -15,15 +14,20 @@ public class Response {
     private Socket conn;
     private String document_root;
     private PrintWriter print_writer;
-    private Logger logger;
+    private LogFile logFile;
 
+    /**
+     * @param conn
+     * @param document_root
+     * @throws IOException
+     */
     public Response(Socket conn, String document_root) throws IOException {
         this.conn = conn;
         this.document_root = document_root;
-        logger = Logger.getLogger(Response.class.getName());
+        logFile = new LogFile(document_root);
     }
 
-    private String getHeaderMsg(String response_code, String content_type, long resource_length) {
+    private String getHeader(String response_code, String content_type, long resource_length) {
         final String CR_LF = "\r\n";
 
         String msg = "HTTP/1.1 " + response_code + CR_LF;
@@ -35,8 +39,12 @@ public class Response {
         return msg + "Content-Length: " + resource_length + CR_LF;
     }
 
-    // TODO - to be improved
-    private String getBodyMsg(String respond_code, String name) {
+    /**
+     * @param respond_code
+     * @param name
+     * @return
+     */
+    private String getHTMLPage(String respond_code, String name) {
 
         switch (ResponseCode.convert(respond_code)) {
             case NOT_FOUND:
@@ -45,9 +53,13 @@ public class Response {
                 return "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\"><html><head><title>" + respond_code + "</title></head><body><h1>" + respond_code + "</h1><p>The request code " + name + " was not found on this server.</p></body></html>";
         }
 
+        // TODO - to be improved
         return "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\"><html><head><title>" + respond_code + "</title></head><body><h1>" + respond_code + "</h1><p></p></body></html>";
     }
 
+    /**
+     * @param resource_path
+     */
     private void sendResource(String resource_path) {
         final int CHUNK_SIZE = 1500;
 
@@ -64,60 +76,91 @@ public class Response {
             out.close();
             in.close();
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            logFile.logWarning(resource_path + " IS NOT FOUND");
         } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void respondHead() {
-        print_writer.println(getHeaderMsg(WORKING_OKAY.toString(), NONE.toString(), 0));
-    }
-
-    private void respondGet(String resource_name) {
-        File resource = new File(document_root + resource_name);
-        if (resource.exists()) {
-            print_writer.println(getHeaderMsg(WORKING_OKAY.toString(), TEXT_HTML.toString(), resource.length()));
-            sendResource(document_root + resource_name);
-        } else {
-            sendNotFound(resource_name);
+            logFile.logWarning("IOException: " + e.getMessage());
         }
     }
 
     /**
-     * If the requested file is deleted successfully, then send HTTP 200 message, implying "resource deleted successfully".
+     * Return a requested HTTP 200 response header containing the information about the resource identified in the request (if the file exists at the specified location in the document root) to client.
+     */
+    private void respondHEAD() {
+        print_writer.println(getHeader(WORKING_OKAY.toString(), NONE.toString(), 0));
+
+        logFile.logRespond(WORKING_OKAY.toString(), conn.getInetAddress());
+    }
+
+    /**
+     * Similarly to respondHEAD() as for the HEAD request,
+     * return a requested header followed by requested file data (if the file exists at the specified location in the document root) to client.
      *
      * @param resource_name
      */
-    private void respondDelete(String resource_name) {
+    private void respondGET(String resource_name) {
         File resource = new File(document_root + resource_name);
+
         if (resource.exists()) {
-            print_writer.println(getHeaderMsg(WORKING_OKAY.toString(), NONE.toString(), 0));
-            resource.delete();
-            logger.warning(resource_name.toString() + " IS DELETED SUCCESSFULLY");
+            print_writer.println(getHeader(WORKING_OKAY.toString(), TEXT_HTML.toString(), resource.length()));
+            sendResource(document_root + resource_name);
+
+            logFile.logRespond(WORKING_OKAY.toString(), conn.getInetAddress());
         } else {
             sendNotFound(resource_name);
         }
     }
 
-    private void sendNotFound(String resource_name) {
-        String body_msg = getBodyMsg(NOT_FOUND.toString(), resource_name);
-        print_writer.println(getHeaderMsg(NOT_FOUND.toString(), TEXT_HTML.toString(), body_msg.length()));
-        print_writer.println(body_msg);
-        logger.warning(resource_name + " NOT FOUND");
-    }
+    /**
+     * If the requested file is found but will not be deleted only to be marked in the log file,
+     * return only send HTTP 200 response header, implying "resource deleted successfully".
+     *
+     * @param resource_name
+     */
+    private void respondDELETE(String resource_name) {
+        File resource = new File(document_root + resource_name);
 
-    private void sendNotImplemented(String request_name) {
-        String body_msg = getBodyMsg(NOT_IMPLEMENTED.toString(), request_name);
-        print_writer.println(getHeaderMsg(NOT_IMPLEMENTED.toString(), TEXT_HTML.toString(), body_msg.length()));
-        print_writer.println(body_msg);
-        logger.warning("REQUEST TYPE: " + request_name + " IS NOT RECOGNISED");
+        if (resource.exists()) {
+            print_writer.println(getHeader(WORKING_OKAY.toString(), NONE.toString(), 0));
+//            resource.delete();
+
+            logFile.logWarning(resource_name.toString() + " IS MARKED TO BE DELETED");
+        } else {
+            sendNotFound(resource_name);
+        }
     }
 
     /**
-     * Handle with each type of the HTTP request (HEAD, GET and DELETE)
-     * and then respond appropriately with successful messages or error messages when non-existent services or resources are requested.
+     * If the request file cannot be found,
+     * then return 404 File Not Found response header followed by HTML page (the latter for a GET request only) to client.
      *
+     * @param resource_name
+     */
+    private void sendNotFound(String resource_name) {
+        String HTML_page = getHTMLPage(NOT_FOUND.toString(), resource_name);
+        print_writer.println(getHeader(NOT_FOUND.toString(), TEXT_HTML.toString(), HTML_page.length()));
+        print_writer.println(HTML_page);
+
+        logFile.logRespond(NOT_FOUND.toString(), conn.getInetAddress());
+    }
+
+    /**
+     * If the request code doesn't exist,
+     * return 501 File Not Implemented response header followed by HTML body page to client.
+     *
+     * @param not_implemented_code
+     */
+    private void sendNotImplemented(String not_implemented_code) {
+        String HTML_page = getHTMLPage(NOT_IMPLEMENTED.toString(), not_implemented_code);
+        print_writer.println(getHeader(NOT_IMPLEMENTED.toString(), TEXT_HTML.toString(), HTML_page.length()));
+        print_writer.println(HTML_page);
+
+        logFile.logRespond(NOT_IMPLEMENTED.toString(), conn.getInetAddress());
+    }
+
+    /**
+     * Check whether the textual request from client corresponds to HEAD, GET and DELETE request
+     * and then respond appropriately with successful messages or error messages when non-existent services or resources are requested.
+     * If the received request is not supported, then send back 501 File Not Implemented response to the client.
      * @param line
      * @throws IOException
      */
@@ -127,15 +170,17 @@ public class Response {
         String[] request_header = line.split("\\s+");
         String request_code = request_header[0];
 
+        logFile.logRequest(request_code, conn.getInetAddress());
+
         switch (RequestCode.convert(request_code)) {
             case HEAD:
-                respondHead();
+                respondHEAD();
                 break;
             case GET:
-                respondGet(request_header[1]);
+                respondGET(request_header[1]);
                 break;
             case DELETE:
-                respondDelete(request_header[1]);
+                respondDELETE(request_header[1]);
                 break;
             default:
                 sendNotImplemented(request_code);
