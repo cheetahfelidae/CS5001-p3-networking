@@ -39,7 +39,7 @@ public class ConnectionHandler extends Thread {
 
             if (line != null) {
                 System.out.println("> " + line); // assuming no exception, print out line received from client
-                Response.respond(conn, line, document_root);
+                Response.processRequest(conn, line, document_root);
             } else {
                 // if readLine fails we can deduce here that the connection to the client is broken
                 // and shut down the connection on this side cleanly by throwing a DisconnectedException

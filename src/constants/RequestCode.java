@@ -1,6 +1,9 @@
+package constants;
+
 public enum RequestCode {
     GET("GET"),
-    HEAD("HEAD");
+    HEAD("HEAD"),
+    DELETE("DELETE");
 
     private String code;
 
