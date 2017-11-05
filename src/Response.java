@@ -93,10 +93,16 @@ public class Response {
     /**
      * Return a requested HTTP 200 response header containing the information about the resource identified in the request (if the file exists at the specified location in the document root) to client.
      */
-    private void respondHEAD() {
-        print_writer.println(getHeader(WORKING_OKAY.toString(), NONE.toString(), 0));
+    private void respondHEAD(String resource_name) {
+        File resource = new File(document_root + resource_name);
 
-        logFile.logRespond(WORKING_OKAY.toString(), conn.getInetAddress());
+        if (resource.exists()) {
+            print_writer.println(getHeader(WORKING_OKAY.toString(), NONE.toString(), 0));
+
+            logFile.logRespond(WORKING_OKAY.toString(), conn.getInetAddress());
+        } else {
+            sendNotFound(resource_name);
+        }
     }
 
     /**
@@ -183,7 +189,7 @@ public class Response {
 
         switch (RequestCode.convert(request_code)) {
             case HEAD:
-                respondHEAD();
+                respondHEAD(request_header[1]);
                 break;
             case GET:
                 respondGET(request_header[1]);

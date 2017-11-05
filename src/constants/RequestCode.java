@@ -3,7 +3,8 @@ package constants;
 public enum RequestCode {
     GET("GET"),
     HEAD("HEAD"),
-    DELETE("DELETE");
+    DELETE("DELETE"),
+    NONE("");
 
     private String code;
 
@@ -28,6 +29,6 @@ public enum RequestCode {
                 return e;
             }
         }
-        throw new RuntimeException("REQUEST CODE IS NOT FOUND");
+        return NONE;
     }
 }
