@@ -21,12 +21,20 @@ public class Response {
      * @param document_root
      * @throws IOException
      */
-    public Response(Socket conn, String document_root) throws IOException {
+    public Response(Socket conn, String document_root, LogFile logger) throws IOException {
         this.conn = conn;
         this.document_root = document_root;
-        logFile = new LogFile(document_root);
+        this.logFile = logger;
     }
 
+    /**
+     * Return response header containing information about the resource identified in the request (if the file exists at the specified location in the document root).
+     *
+     * @param response_code
+     * @param content_type
+     * @param resource_length
+     * @return
+     */
     private String getHeader(String response_code, String content_type, long resource_length) {
         final String CR_LF = "\r\n";
 
@@ -161,6 +169,7 @@ public class Response {
      * Check whether the textual request from client corresponds to HEAD, GET and DELETE request
      * and then respond appropriately with successful messages or error messages when non-existent services or resources are requested.
      * If the received request is not supported, then send back 501 File Not Implemented response to the client.
+     *
      * @param line
      * @throws IOException
      */

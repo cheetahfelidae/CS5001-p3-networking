@@ -1,30 +1,28 @@
 import java.io.*;
 import java.net.Socket;
-import java.util.logging.Logger;
 
 public class ConnectionHandler extends Thread {
-
     private Socket conn;       // socket representing TCP/IP connection to Client
     private InputStream input_stream;    // get data from client on this input stream
-    private OutputStream out_stream;   // can send data back to the client on this output stream
     private BufferedReader buff_reader;         // use buffered reader to read client data
     private String document_root;
-    private Logger logger;
+    private LogFile logger;
 
     /**
+     * Initialise variables.
+     *
      * @param document_root
      * @param conn
      */
-    public ConnectionHandler(String document_root, Socket conn) {
+    public ConnectionHandler(String document_root, Socket conn, LogFile logger) {
         this.document_root = document_root;
         this.conn = conn;
         try {
             input_stream = conn.getInputStream();     // get data from client on this input stream
-            out_stream = conn.getOutputStream();  // to send data back to the client on this stream
             buff_reader = new BufferedReader(new InputStreamReader(input_stream)); // use buffered reader to read client data
-            logger = Logger.getLogger(ConnectionHandler.class.getName());
+            this.logger = logger;
         } catch (IOException ioe) {
-            logger.info("ConnectionHandler: " + ioe.getMessage());
+            logger.logInfo("ConnectionHandler: " + ioe.getMessage());
         }
     }
 
@@ -33,11 +31,11 @@ public class ConnectionHandler extends Thread {
      * When any Exception occurs (including IOException, ClientDisconnectedException), exit cleanly
      */
     public void run() {
-        logger.info("new ConnectionHandler thread started .... ");
+        logger.logInfo("new ConnectionHandler thread started .... ");
         try {
             handleRequest();
         } catch (Exception e) {
-            logger.info("ConnectionHandler:run " + e.getMessage());
+            logger.logInfo("ConnectionHandler:run " + e.getMessage());
             cleanUp();
         }
     }
@@ -62,8 +60,8 @@ public class ConnectionHandler extends Thread {
         String line = buff_reader.readLine();
 
         if (line != null) {
-            logger.info("> " + line);
-            new Response(conn, document_root).processRequest(line);
+            logger.logInfo("> " + line);
+            new Response(conn, document_root, logger).processRequest(line);
         } else {
             throw new DisconnectedException(" ... client has closed the connection ... ");
         }
@@ -73,14 +71,14 @@ public class ConnectionHandler extends Thread {
      * Clean up and exit
      */
     private void cleanUp() {
-        logger.info("ConnectionHandler: ... cleaning up and exiting ... ");
+        logger.logInfo("ConnectionHandler: ... cleaning up and exiting ... ");
 
         try {
             buff_reader.close();
             input_stream.close();
             conn.close();
         } catch (IOException ioe) {
-            logger.severe("ConnectionHandler: cleanUp " + ioe.getMessage());
+            logger.logSevere("ConnectionHandler: cleanUp " + ioe.getMessage());
         }
     }
 
