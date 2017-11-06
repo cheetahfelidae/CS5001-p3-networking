@@ -6,7 +6,7 @@ import java.util.logging.Logger;
 
 /**
  * As the name suggests, this is the server class whose responsibility is to serve requests from clients (simultaneously).
- *
+ * <p>
  * original source: https://studres.cs.st-andrews.ac.uk/CS5001/Examples/L07-10_IO_and_Networking/CS5001_ClientServerExample/src/Server.java.
  */
 public class WebServer {
@@ -21,8 +21,8 @@ public class WebServer {
      * it will flush and close the connection to the client and listen for further requests since, according to the requirement,
      * the server is not require to keep connections alive.
      *
-     * @param document_root where the server serves a requested file to a client.
-     * @param port which the server will be listening to.
+     * @param document_root path where the server serves a requested file to a client.
+     * @param port          socket port which the server will be listening to.
      */
     public WebServer(String document_root, int port) {
         ServerSocket sever_socket;

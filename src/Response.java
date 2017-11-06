@@ -11,6 +11,7 @@ import static constants.ResponseCode.*;
  */
 public class Response {
     private static final String TEXT_HTML = "text/html";
+    private static final int CHUNK_SIZE = 1500;
 
     private Socket conn;
     private String document_root;
@@ -18,7 +19,7 @@ public class Response {
     private LogFile log_file;
 
     /**
-     * @param conn established connection with a client.
+     * @param conn          established connection with a client.
      * @param document_root a path where the server serves a document to a client.
      * @throws IOException
      */
@@ -31,9 +32,9 @@ public class Response {
     /**
      * Return response header containing information about the resource identified in the request (if the file exists at the specified location in the document root).
      *
-     * @param response_code
-     * @param content_type
-     * @param resource_length
+     * @param response_code   response code from the response.
+     * @param content_type    type of the requested resource.
+     * @param resource_length the size of the requested resource.
      * @return
      */
     private String getHeader(String response_code, String content_type, long resource_length) {
@@ -45,29 +46,28 @@ public class Response {
     }
 
     /**
-     * @param respond_code
-     * @param name
-     * @return
+     * Return a specific HTML page corresponds to a particular respond code.
+     *
+     * @param respond_code respond code from the client request.
+     * @param name         either a requested file name for NOT FOUND code or unrecognised request code
+     * @return HTML page.
      */
     private String getHTMLPage(String respond_code, String name) {
 
         switch (ResponseCode.convert(respond_code)) {
             case NOT_FOUND:
                 return "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\"><html><head><title>" + respond_code + "</title></head><body><h1>" + respond_code + "</h1><p>The requested URL " + name + " was not found on this server.</p></body></html>";
-            case NOT_IMPLEMENTED:
-                return "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\"><html><head><title>" + respond_code + "</title></head><body><h1>" + respond_code + "</h1><p>The request code " + name + " was not found on this server.</p></body></html>";
         }
 
-        // TODO - to be improved
-        return "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\"><html><head><title>" + respond_code + "</title></head><body><h1>" + respond_code + "</h1><p></p></body></html>";
+        return "";
     }
 
     /**
-     * @param resource_path
+     * Return a request file (e.g. GIF, JPEG and PNG) in binary.
+     *
+     * @param resource_path the name of the request file from the client.
      */
     private void sendResource(String resource_path) {
-        final int CHUNK_SIZE = 1500;
-
         try {
             InputStream in = new FileInputStream(resource_path);
             OutputStream out = conn.getOutputStream();
@@ -89,6 +89,8 @@ public class Response {
 
     /**
      * Return a requested HTTP 200 response header containing the information about the resource identified in the request (if the file exists at the specified location in the document root) to client.
+     *
+     * @param resource_name the name of the request file from the client.
      */
     private void respondHEAD(String resource_name) {
         File resource = new File(document_root + resource_name);
@@ -106,7 +108,7 @@ public class Response {
      * Similarly to respondHEAD() as for the HEAD request,
      * return a requested header followed by requested file data (if the file exists at the specified location in the document root) to client.
      *
-     * @param resource_name
+     * @param resource_name the name of the request file from the client.
      */
     private void respondGET(String resource_name) {
         File resource = new File(document_root + resource_name);
@@ -122,19 +124,19 @@ public class Response {
     }
 
     /**
-     * If the requested file is found but will not be deleted only to be marked in the log file,
-     * return only send HTTP 200 response header, implying "resource deleted successfully".
+     * If a requested file is found, then delete the file and
+     * return only HTTP 200 response header, implying "resource deleted successfully" without the body message.
      *
-     * @param resource_name
+     * @param resource_name the name of the request-to-be-deleted file from the client.
      */
     private void respondDELETE(String resource_name) {
         File resource = new File(document_root + resource_name);
 
         if (resource.exists()) {
             print_writer.println(getHeader(WORKING_OKAY.toString(), TEXT_HTML, 0));
-//            resource.delete();
 
-            log_file.logWarning(resource_name.toString() + " IS MARKED TO BE DELETED");
+            log_file.logWarning(resource_name +
+                    (resource.delete() ? " HAS BEEN DELETED SUCCESSFULLY" : " HAS FAILED TO BE DELETED SUCCESSFULLY"));
         } else {
             sendNotFound(resource_name);
         }
@@ -144,27 +146,26 @@ public class Response {
      * If the request file cannot be found,
      * then return 404 File Not Found response header followed by HTML page (the latter for a GET request only) to client.
      *
-     * @param resource_name
+     * @param resource_name the name of the not-found file from the client.
      */
     private void sendNotFound(String resource_name) {
-        String HTML_page = getHTMLPage(NOT_FOUND.toString(), resource_name);
-        print_writer.println(getHeader(NOT_FOUND.toString(), TEXT_HTML, HTML_page.length()));
-        print_writer.println(HTML_page);
+        String page = getHTMLPage(NOT_FOUND.toString(), resource_name);
+        print_writer.println(getHeader(NOT_FOUND.toString(), TEXT_HTML, page.length()));
+        print_writer.println(page);
 
         log_file.logRespond(NOT_FOUND.toString(), conn.getInetAddress());
     }
 
     /**
-     * If the request code doesn't exist,
-     * return 501 File Not Implemented response header followed by HTML body page to client.
+     * If the request code doesn't exist or is unsupported by the server,
+     * return 501 File Not Implemented response header without body message.
      *
-     * @param not_implemented_code
+     * @param unrecognised_code code which has never been implemented in the server.
      */
-    private void sendNotImplemented(String not_implemented_code) {
-        String HTML_page = getHTMLPage(NOT_IMPLEMENTED.toString(), not_implemented_code);
-        print_writer.println(getHeader(NOT_IMPLEMENTED.toString(), TEXT_HTML, HTML_page.length()));
-        print_writer.println(HTML_page);
+    private void sendNotImplemented(String unrecognised_code) {
+        print_writer.println(getHeader(NOT_IMPLEMENTED.toString(), TEXT_HTML, 0));
 
+        log_file.logInfo("REQUEST CODE " + unrecognised_code + " IS NOT SUPPORTED BY THE SERVER");
         log_file.logRespond(NOT_IMPLEMENTED.toString(), conn.getInetAddress());
     }
 
@@ -173,13 +174,13 @@ public class Response {
      * and then respond appropriately with successful messages or error messages when non-existent services or resources are requested.
      * If the received request is not supported, then send back 501 File Not Implemented response to the client.
      *
-     * @param line
+     * @param request request message from a client.
      * @throws IOException
      */
-    public void processRequest(String line) throws IOException {
+    public void processRequest(String request) throws IOException {
         print_writer = new PrintWriter(this.conn.getOutputStream(), true);
 
-        String[] request_header = line.split("\\s+");
+        String[] request_header = request.split("\\s+");
         String request_code = request_header[0];
 
         log_file.logRequest(request_code, conn.getInetAddress());
