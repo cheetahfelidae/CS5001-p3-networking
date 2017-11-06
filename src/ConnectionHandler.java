@@ -2,17 +2,33 @@ import java.io.*;
 import java.net.Socket;
 
 public class ConnectionHandler extends Thread {
-    private Socket conn;       // socket representing TCP/IP connection to Client
-    private InputStream input_stream;    // get data from client on this input stream
-    private BufferedReader buff_reader;         // use buffered reader to read client data
+    /**
+     * socket representing TCP/IP connection to Client.
+     */
+    private Socket conn;
+    /**
+     * get data from client on this input stream.
+     */
+    private InputStream input_stream;
+    /**
+     * use buffered reader to read client data
+     */
+    private BufferedReader buff_reader;
+    /**
+     * a document path where server serves a requested file to a client.
+     */
     private String document_root;
+    /**
+     * This is used to track information of the requests into a file.
+     */
     private LogFile logger;
 
     /**
      * Initialise variables.
      *
-     * @param document_root
-     * @param conn
+     * @param document_root where server serves a requested file to a client.
+     * @param conn established connection with a client.
+     * @param logger used to track information of the requests into a file.
      */
     public ConnectionHandler(String document_root, Socket conn, LogFile logger) {
         this.document_root = document_root;
@@ -28,7 +44,7 @@ public class ConnectionHandler extends Thread {
 
     /**
      * Run method input_stream invoked when the Thread's start method (ch.start(); in WebServer class) input_stream invoked
-     * When any Exception occurs (including IOException, ClientDisconnectedException), exit cleanly
+     * When any Exception occurs (including IOException, ClientDisconnectedException), exit cleanly.
      */
     public void run() {
         logger.logInfo("new ConnectionHandler thread started .... ");
@@ -41,7 +57,7 @@ public class ConnectionHandler extends Thread {
     }
 
     /**
-     * Receive and read an textual incoming request from client over socket.
+     * Receive and read a textual incoming request from client over socket.
      * Check if there is no exception or readLine fails.
      * If so, print out line received from client and then examine and response with the request appropriately.
      * If not, we can deduce here that the connection to the client input_stream broken
@@ -68,7 +84,7 @@ public class ConnectionHandler extends Thread {
     }
 
     /**
-     * Clean up and exit
+     * Clean up and exit.
      */
     private void cleanUp() {
         logger.logInfo("ConnectionHandler: ... cleaning up and exiting ... ");

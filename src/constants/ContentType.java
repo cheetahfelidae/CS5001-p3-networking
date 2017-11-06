@@ -1,7 +1,7 @@
 package constants;
 
 public enum ContentType {
-    TEXT_HTML("TEXT_HTML"),
+    TEXT_HTML("text/html"),
     NONE("");
 
     private String type;

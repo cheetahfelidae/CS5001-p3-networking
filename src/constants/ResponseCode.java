@@ -1,6 +1,9 @@
 package constants;
 
 public enum ResponseCode {
+    /**
+     *
+     */
     WORKING_OKAY("200 OK"),
     NOT_FOUND("404 Not Found"),
     NOT_IMPLEMENTED("501 Not Implemented");
@@ -17,10 +20,10 @@ public enum ResponseCode {
     }
 
     /**
-     * To be able to handle with switch case
+     * To be able to handle with switch case, this method converts a type of the string from String to Enum.
      *
-     * @param code
-     * @return
+     * @param code string-type value.
+     * @return Enum-type value.
      */
     public static ResponseCode convert(String code) {
         for (ResponseCode e : ResponseCode.values()) {

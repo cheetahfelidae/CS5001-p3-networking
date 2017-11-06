@@ -38,13 +38,9 @@ public class Response {
     private String getHeader(String response_code, String content_type, long resource_length) {
         final String CR_LF = "\r\n";
 
-        String msg = "HTTP/1.1 " + response_code + CR_LF;
-
-        if (content_type.length() > 0) {
-            msg += "Content-Type: " + content_type + CR_LF;
-        }
-
-        return msg + "Content-Length: " + resource_length + CR_LF;
+        return "HTTP/1.1 " + response_code + CR_LF +
+                "Content-Type: " + content_type + CR_LF +
+                "Content-Length: " + resource_length + CR_LF;
     }
 
     /**
@@ -97,7 +93,7 @@ public class Response {
         File resource = new File(document_root + resource_name);
 
         if (resource.exists()) {
-            print_writer.println(getHeader(WORKING_OKAY.toString(), NONE.toString(), 0));
+            print_writer.println(getHeader(WORKING_OKAY.toString(), TEXT_HTML.toString(), resource.length()));
 
             logFile.logRespond(WORKING_OKAY.toString(), conn.getInetAddress());
         } else {
