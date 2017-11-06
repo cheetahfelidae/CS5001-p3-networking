@@ -4,27 +4,28 @@ import constants.ResponseCode;
 import java.io.*;
 import java.net.Socket;
 
-import static constants.ContentType.*;
 import static constants.ResponseCode.*;
 
 /**
  * This class handles with HTTP requests with only one accessible (public) method called "processRequest".
  */
 public class Response {
+    private static final String TEXT_HTML = "text/html";
+
     private Socket conn;
     private String document_root;
     private PrintWriter print_writer;
-    private LogFile logFile;
+    private LogFile log_file;
 
     /**
-     * @param conn
-     * @param document_root
+     * @param conn established connection with a client.
+     * @param document_root a path where the server serves a document to a client.
      * @throws IOException
      */
     public Response(Socket conn, String document_root, LogFile logger) throws IOException {
         this.conn = conn;
         this.document_root = document_root;
-        this.logFile = logger;
+        this.log_file = logger;
     }
 
     /**
@@ -80,9 +81,9 @@ public class Response {
             out.close();
             in.close();
         } catch (FileNotFoundException e) {
-            logFile.logWarning(resource_path + " IS NOT FOUND");
+            log_file.logWarning(resource_path + " IS NOT FOUND");
         } catch (IOException e) {
-            logFile.logWarning("IOException: " + e.getMessage());
+            log_file.logWarning("IOException: " + e.getMessage());
         }
     }
 
@@ -93,9 +94,9 @@ public class Response {
         File resource = new File(document_root + resource_name);
 
         if (resource.exists()) {
-            print_writer.println(getHeader(WORKING_OKAY.toString(), TEXT_HTML.toString(), resource.length()));
+            print_writer.println(getHeader(WORKING_OKAY.toString(), TEXT_HTML, resource.length()));
 
-            logFile.logRespond(WORKING_OKAY.toString(), conn.getInetAddress());
+            log_file.logRespond(WORKING_OKAY.toString(), conn.getInetAddress());
         } else {
             sendNotFound(resource_name);
         }
@@ -111,10 +112,10 @@ public class Response {
         File resource = new File(document_root + resource_name);
 
         if (resource.exists()) {
-            print_writer.println(getHeader(WORKING_OKAY.toString(), TEXT_HTML.toString(), resource.length()));
+            print_writer.println(getHeader(WORKING_OKAY.toString(), TEXT_HTML, resource.length()));
             sendResource(document_root + resource_name);
 
-            logFile.logRespond(WORKING_OKAY.toString(), conn.getInetAddress());
+            log_file.logRespond(WORKING_OKAY.toString(), conn.getInetAddress());
         } else {
             sendNotFound(resource_name);
         }
@@ -130,10 +131,10 @@ public class Response {
         File resource = new File(document_root + resource_name);
 
         if (resource.exists()) {
-            print_writer.println(getHeader(WORKING_OKAY.toString(), NONE.toString(), 0));
+            print_writer.println(getHeader(WORKING_OKAY.toString(), TEXT_HTML, 0));
 //            resource.delete();
 
-            logFile.logWarning(resource_name.toString() + " IS MARKED TO BE DELETED");
+            log_file.logWarning(resource_name.toString() + " IS MARKED TO BE DELETED");
         } else {
             sendNotFound(resource_name);
         }
@@ -147,10 +148,10 @@ public class Response {
      */
     private void sendNotFound(String resource_name) {
         String HTML_page = getHTMLPage(NOT_FOUND.toString(), resource_name);
-        print_writer.println(getHeader(NOT_FOUND.toString(), TEXT_HTML.toString(), HTML_page.length()));
+        print_writer.println(getHeader(NOT_FOUND.toString(), TEXT_HTML, HTML_page.length()));
         print_writer.println(HTML_page);
 
-        logFile.logRespond(NOT_FOUND.toString(), conn.getInetAddress());
+        log_file.logRespond(NOT_FOUND.toString(), conn.getInetAddress());
     }
 
     /**
@@ -161,10 +162,10 @@ public class Response {
      */
     private void sendNotImplemented(String not_implemented_code) {
         String HTML_page = getHTMLPage(NOT_IMPLEMENTED.toString(), not_implemented_code);
-        print_writer.println(getHeader(NOT_IMPLEMENTED.toString(), TEXT_HTML.toString(), HTML_page.length()));
+        print_writer.println(getHeader(NOT_IMPLEMENTED.toString(), TEXT_HTML, HTML_page.length()));
         print_writer.println(HTML_page);
 
-        logFile.logRespond(NOT_IMPLEMENTED.toString(), conn.getInetAddress());
+        log_file.logRespond(NOT_IMPLEMENTED.toString(), conn.getInetAddress());
     }
 
     /**
@@ -181,7 +182,7 @@ public class Response {
         String[] request_header = line.split("\\s+");
         String request_code = request_header[0];
 
-        logFile.logRequest(request_code, conn.getInetAddress());
+        log_file.logRequest(request_code, conn.getInetAddress());
 
         switch (RequestCode.convert(request_code)) {
             case HEAD:

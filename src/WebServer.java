@@ -1,10 +1,16 @@
 import java.io.IOException;
-import java.net.*;
+
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.logging.Logger;
 
+/**
+ * As the name suggests, this is the server class whose responsibility is to serve requests from clients (simultaneously).
+ *
+ * original source: https://studres.cs.st-andrews.ac.uk/CS5001/Examples/L07-10_IO_and_Networking/CS5001_ClientServerExample/src/Server.java.
+ */
 public class WebServer {
-
-    private final String LOG_FILE = System.getProperty("user.dir") + "/log.txt";
+    private static final String LOG_FILE = System.getProperty("user.dir") + "/log.txt";
 
     /**
      * 1. The server listen for client connection requests on on a specified port and wait until client requests a connection, then returns connection (socket).
@@ -15,8 +21,8 @@ public class WebServer {
      * it will flush and close the connection to the client and listen for further requests since, according to the requirement,
      * the server is not require to keep connections alive.
      *
-     * @param document_root
-     * @param port
+     * @param document_root where the server serves a requested file to a client.
+     * @param port which the server will be listening to.
      */
     public WebServer(String document_root, int port) {
         ServerSocket sever_socket;

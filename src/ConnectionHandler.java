@@ -1,6 +1,15 @@
-import java.io.*;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.Socket;
 
+/**
+ * This class, as the name suggests, is responsible for serving a particular client's request when the server-client connection established.
+ *
+ * original source: https://studres.cs.st-andrews.ac.uk/CS5001/Examples/L07-10_IO_and_Networking/CS5001_ClientServerExample/src/ConnectionHandler.java.
+ */
 public class ConnectionHandler extends Thread {
     /**
      * socket representing TCP/IP connection to Client.
@@ -11,11 +20,11 @@ public class ConnectionHandler extends Thread {
      */
     private InputStream input_stream;
     /**
-     * use buffered reader to read client data
+     * use buffered reader to read client data.
      */
     private BufferedReader buff_reader;
     /**
-     * a document path where server serves a requested file to a client.
+     * a document path where the server serves a requested file to a client.
      */
     private String document_root;
     /**
@@ -26,7 +35,7 @@ public class ConnectionHandler extends Thread {
     /**
      * Initialise variables.
      *
-     * @param document_root where server serves a requested file to a client.
+     * @param document_root where the server serves a requested file to a client.
      * @param conn established connection with a client.
      * @param logger used to track information of the requests into a file.
      */
@@ -84,7 +93,7 @@ public class ConnectionHandler extends Thread {
     }
 
     /**
-     * Clean up and exit.
+     * Clean up the reading and writing buffers and close the listening socket.
      */
     private void cleanUp() {
         logger.logInfo("ConnectionHandler: ... cleaning up and exiting ... ");

@@ -9,8 +9,6 @@ import java.util.logging.SimpleFormatter;
  */
 public class LogFile {
     private Logger logger;
-    private SimpleFormatter formatter;
-    private FileHandler file_handler;
 
     /**
      * Configure the logger with handler and formatter
@@ -20,9 +18,8 @@ public class LogFile {
      */
     public LogFile(String file_path) throws IOException {
         logger = Logger.getLogger("LogFile");
-        formatter = new SimpleFormatter();
-        file_handler = new FileHandler(file_path);
-        file_handler.setFormatter(formatter);
+        FileHandler file_handler = new FileHandler(file_path);
+        file_handler.setFormatter(new SimpleFormatter());
         logger.addHandler(file_handler);
     }
 
