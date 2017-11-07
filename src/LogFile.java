@@ -5,7 +5,7 @@ import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
 /**
- * This is used to log each time requests are made, indicating data/time, request type, response code etc.
+ * Extension: This is used to log each time requests are made, indicating data/time, request type, response code etc.
  */
 public class LogFile {
     private Logger logger;
@@ -39,7 +39,7 @@ public class LogFile {
      * @param inet_address client's ip address.
      */
     public void logRequest(String request_code, InetAddress inet_address) {
-        logger.info("Request Code: " + request_code + " from " + inet_address);
+        logger.info("Receive: " + request_code + " from " + inet_address);
     }
 
     /**
@@ -49,7 +49,7 @@ public class LogFile {
      * @param inet_address  client's ip address.
      */
     public void logRespond(String response_code, InetAddress inet_address) {
-        logger.info("Response Code: " + response_code + " from " + inet_address);
+        logger.info("Response: " + response_code + " to " + inet_address);
     }
 
     /**

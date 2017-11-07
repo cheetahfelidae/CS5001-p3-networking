@@ -81,12 +81,11 @@ public class ConnectionHandler extends Thread {
      * @throws IOException
      */
     private void handleRequest() throws DisconnectedException, IOException {
-
         String line = buff_reader.readLine();
 
         if (line != null) {
-            logger.logInfo("> " + line);
-            new Response(conn, document_root, logger).processRequest(line);
+            new Responder(conn, document_root, logger).processRequest(line);
+            cleanUp();
         } else {
             throw new DisconnectedException(" ... client has closed the connection ... ");
         }
@@ -106,6 +105,5 @@ public class ConnectionHandler extends Thread {
             logger.logSevere("ConnectionHandler: cleanUp " + ioe.getMessage());
         }
     }
-
 
 }

@@ -5,17 +5,21 @@ package constants;
  */
 public enum RequestCode {
     /**
-     * GET code.
+     * GET code: Requests data from a specified resource.
      */
     GET("GET"),
     /**
-     * HEAD code.
+     * HEAD code: Same as GET but returns only HTTP headers and no document body.
      */
     HEAD("HEAD"),
     /**
-     * DELETE code.
+     * DELETE code: Deletes the specified resource.
      */
     DELETE("DELETE"),
+    /**
+     * OPTIONS code: Returns the HTTP methods that the server supports.
+     */
+    OPTIONS("OPTIONS"),
     /**
      * used in convert() when there is nothing to be return.
      */

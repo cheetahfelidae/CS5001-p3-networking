@@ -1,16 +1,25 @@
 import constants.RequestCode;
 import constants.ResponseCode;
 
-import java.io.*;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.io.File;
+import java.io.OutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.Socket;
 
+import static constants.RequestCode.OPTIONS;
 import static constants.ResponseCode.*;
 
 /**
- * This class handles with HTTP requests with only one accessible (public) method called "processRequest".
+ * This class handles with HTTP requests which comprises of two components: header and document body.
+ * There is only one accessible (public) method which is processRequest().
  */
-public class Response {
+public class Responder {
     private static final String TEXT_HTML = "text/html";
+    private static final String CR_LF = "\r\n"; // use of <CR><LF> to delimit header fields and header from content.
     private static final int CHUNK_SIZE = 1500;
 
     private Socket conn;
@@ -23,7 +32,7 @@ public class Response {
      * @param document_root a path where the server serves a document to a client.
      * @throws IOException
      */
-    public Response(Socket conn, String document_root, LogFile logger) throws IOException {
+    public Responder(Socket conn, String document_root, LogFile logger) throws IOException {
         this.conn = conn;
         this.document_root = document_root;
         this.log_file = logger;
@@ -38,8 +47,6 @@ public class Response {
      * @return
      */
     private String getHeader(String response_code, String content_type, long resource_length) {
-        final String CR_LF = "\r\n";
-
         return "HTTP/1.1 " + response_code + CR_LF +
                 "Content-Type: " + content_type + CR_LF +
                 "Content-Length: " + resource_length + CR_LF;
@@ -124,7 +131,7 @@ public class Response {
     }
 
     /**
-     * If a requested file is found, then delete the file and
+     * Extension: If a requested file is found, then delete the file and
      * return only HTTP 200 response header, implying "resource deleted successfully" without the body message.
      *
      * @param resource_name the name of the request-to-be-deleted file from the client.
@@ -140,6 +147,16 @@ public class Response {
         } else {
             sendNotFound(resource_name);
         }
+    }
+
+    /**
+     * Extension: Returns the HTTP methods that the server supports.
+     */
+    private void respondOPTIONS() {
+        print_writer.println(getHeader(WORKING_OKAY.toString(), TEXT_HTML, 0));
+        print_writer.println(getHTMLPage(OPTIONS.toString(), ""));
+
+        log_file.logRespond(WORKING_OKAY.toString(), conn.getInetAddress());
     }
 
     /**
@@ -195,6 +212,8 @@ public class Response {
             case DELETE:
                 respondDELETE(request_header[1]);
                 break;
+            case OPTIONS:
+                respondOPTIONS();
             default:
                 sendNotImplemented(request_code);
         }

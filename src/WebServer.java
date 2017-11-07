@@ -5,13 +5,12 @@ import java.net.Socket;
 import java.util.logging.Logger;
 
 /**
- * As the name suggests, this is the server class whose responsibility is to serve requests from clients (simultaneously).
+ * As the name suggests, this is the server class whose responsibility is to serve requests from clients.
+ * Extension: the server is able to support multiple concurrent client connection requests up to a specified limit.
  * <p>
  * original source: https://studres.cs.st-andrews.ac.uk/CS5001/Examples/L07-10_IO_and_Networking/CS5001_ClientServerExample/src/Server.java.
  */
 public class WebServer {
-    private static final String LOG_FILE = System.getProperty("user.dir") + "/log.txt";
-
     /**
      * 1. The server listen for client connection requests on on a specified port and wait until client requests a connection, then returns connection (socket).
      * 2. Create new handler for this connection (as a new thread to support multiple concurrent client connection request).
@@ -24,12 +23,12 @@ public class WebServer {
      * @param document_root path where the server serves a requested file to a client.
      * @param port          socket port which the server will be listening to.
      */
-    public WebServer(String document_root, int port) {
+    public WebServer(String document_root, int port, String log_path, int num_clients) {
         ServerSocket sever_socket;
         LogFile logFile;
 
         try {
-            logFile = new LogFile(LOG_FILE);
+            logFile = new LogFile(log_path);
 
             sever_socket = new ServerSocket(port);
             logFile.logInfo("WebServer started ... listening on port " + port + " ...");
