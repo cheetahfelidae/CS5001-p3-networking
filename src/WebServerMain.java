@@ -10,7 +10,7 @@ public class WebServerMain {
     private static final int FIRST = 0;
     private static final int SECOND = 1;
 
-    private static final String DEFAULT_LOG_FILE = System.getProperty("user.dir") + "/log";
+    private static final String DEFAULT_LOG_FILE = System.getProperty("user.dir") + "/log"; // log file will in the current directory
     private static final int DEFAULT_MAX_CLIENTS = Integer.MAX_VALUE;
 
     /**

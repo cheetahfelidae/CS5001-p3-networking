@@ -1,6 +1,5 @@
 import constants.FileType;
 import constants.RequestCode;
-import constants.ResponseCode;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -14,7 +13,6 @@ import java.net.Socket;
 import static constants.FileType.GIF;
 import static constants.FileType.JPEG;
 import static constants.FileType.PNG;
-import static constants.RequestCode.OPTIONS;
 import static constants.ResponseCode.NOT_FOUND;
 import static constants.ResponseCode.NOT_IMPLEMENTED;
 import static constants.ResponseCode.WORKING_OKAY;
@@ -38,7 +36,7 @@ public class Responder {
      *
      * @param conn          established connection with a client.
      * @param document_root a path where the server serves a document to a client.
-     *                      @param logger used to track information of the requests into a file.
+     * @param logger        used to track information of the requests into a file.
      */
     public Responder(Socket conn, String document_root, LogFile logger) {
         this.conn = conn;
@@ -47,10 +45,10 @@ public class Responder {
     }
 
     /**
-     * Return response header containing information about the resource identified in the request (if the file exists at the specified location in the document root).
+     * Get response header containing information about the resource identified in the request (if the file exists at the specified location in the document root).
      *
      * @param response_code   response code from the response.
-     * @param content_type    type of the requested resource.
+     * @param content_type    the type of the requested resource.
      * @param resource_length the size of the requested resource.
      * @return
      */
@@ -61,9 +59,9 @@ public class Responder {
     }
 
     /**
-     * Return a request file (e.g. GIF, JPEG and PNG) in binary.
+     * Extension: Return a request file (e.g. GIF, JPEG, PNG, etc.) in binary.
      *
-     * @param resource_path the name of the request file from the client.
+     * @param resource_path the name of the requested file from the client.
      */
     private void sendResource(String resource_path) {
         try {
@@ -98,7 +96,7 @@ public class Responder {
 
             log_file.logRespond(WORKING_OKAY.toString(), conn.getInetAddress());
         } else {
-            sendNotFound(resource_name);
+            respondNotFound(resource_name);
         }
     }
 
@@ -125,11 +123,9 @@ public class Responder {
             case HTML:
                 return TEXT_HTML;
             case GIF:
-                return GIF.toString();
             case JPEG:
-                return JPEG.toString();
             case PNG:
-                return PNG.toString();
+                return extension;
             default:
         }
 
@@ -151,7 +147,7 @@ public class Responder {
 
             log_file.logRespond(WORKING_OKAY.toString(), conn.getInetAddress());
         } else {
-            sendNotFound(resource_name);
+            respondNotFound(resource_name);
         }
     }
 
@@ -170,20 +166,20 @@ public class Responder {
             log_file.logWarning(resource_name
                     + (resource.delete() ? " HAS BEEN DELETED SUCCESSFULLY" : " HAS FAILED TO BE DELETED SUCCESSFULLY"));
         } else {
-            sendNotFound(resource_name);
+            respondNotFound(resource_name);
         }
     }
 
     /**
      * Extension: Returns the HTTP methods that the server supports.
      */
-    private void sendOPTIONS() {
+    private void respondOPTIONS() {
         String page = "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\"><html>"
                 + "<head><title> Server-Supported HTTP Methods</title></head>"
                 + "<body><h1>HTTP methods which the server serves</h1><p>HEAD</p><p>GET</p><p>DELETE</p><p>OPTIONS</p></body>"
                 + "</html>";
 
-        print_writer.println(getHeader(WORKING_OKAY.toString(), HTML.toString(), page.length()));
+        print_writer.println(getHeader(WORKING_OKAY.toString(), TEXT_HTML, page.length()));
 
         print_writer.println(page);
 
@@ -196,7 +192,7 @@ public class Responder {
      *
      * @param resource_name the name of the not-found file from the client.
      */
-    private void sendNotFound(String resource_name) {
+    private void respondNotFound(String resource_name) {
         String page = "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\"><html>"
                 + "<head><title>" + NOT_FOUND.toString() + "</title></head>"
                 + "<body><h1>" + NOT_FOUND.toString() + "</h1><p>The requested URL " + resource_name + " was not found on this server.</p></body>"
@@ -215,7 +211,7 @@ public class Responder {
      *
      * @param unrecognised_code code which has never been implemented in the server.
      */
-    private void sendNotImplemented(String unrecognised_code) {
+    private void respondNotImplemented(String unrecognised_code) {
         print_writer.println(getHeader(NOT_IMPLEMENTED.toString(), TEXT_HTML, 0));
 
         log_file.logInfo("REQUEST CODE " + unrecognised_code + " IS NOT SUPPORTED BY THE SERVER");
@@ -249,9 +245,9 @@ public class Responder {
                 respondDELETE(request_header[1]);
                 break;
             case OPTIONS:
-                sendOPTIONS();
+                respondOPTIONS();
             default:
-                sendNotImplemented(request_code);
+                respondNotImplemented(request_code);
         }
 
         print_writer.close();
