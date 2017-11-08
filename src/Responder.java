@@ -12,7 +12,6 @@ import java.io.PrintWriter;
 import java.net.Socket;
 
 import static constants.FileType.*;
-import static constants.RequestCode.OPTIONS;
 import static constants.ResponseCode.*;
 
 /**
@@ -54,23 +53,6 @@ public class Responder {
     }
 
     /**
-     * Return a specific HTML page corresponds to a particular respond code.
-     *
-     * @param respond_code respond code from the client request.
-     * @param name         either a requested file name for NOT FOUND code or unrecognised request code
-     * @return HTML page.
-     */
-    private String getHTMLPage(String respond_code, String name) {
-
-        switch (ResponseCode.convert(respond_code)) {
-            case NOT_FOUND:
-                return "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\"><html><head><title>" + respond_code + "</title></head><body><h1>" + respond_code + "</h1><p>The requested URL " + name + " was not found on this server.</p></body></html>";
-        }
-
-        return "";
-    }
-
-    /**
      * Return a request file (e.g. GIF, JPEG and PNG) in binary.
      *
      * @param resource_path the name of the request file from the client.
@@ -104,7 +86,7 @@ public class Responder {
         File resource = new File(document_root + resource_name);
 
         if (resource.exists()) {
-            print_writer.println(getHeader(WORKING_OKAY.toString(), HTML.toString(), resource.length()));
+            print_writer.println(getHeader(WORKING_OKAY.toString(), getFileExtension(resource_name), resource.length()));
 
             log_file.logRespond(WORKING_OKAY.toString(), conn.getInetAddress());
         } else {
@@ -174,7 +156,7 @@ public class Responder {
         File resource = new File(document_root + resource_name);
 
         if (resource.exists()) {
-            print_writer.println(getHeader(WORKING_OKAY.toString(), HTML.toString(), 0));
+            print_writer.println(getHeader(WORKING_OKAY.toString(), getFileExtension(resource_name), 0));
 
             log_file.logWarning(resource_name +
                     (resource.delete() ? " HAS BEEN DELETED SUCCESSFULLY" : " HAS FAILED TO BE DELETED SUCCESSFULLY"));
@@ -186,9 +168,15 @@ public class Responder {
     /**
      * Extension: Returns the HTTP methods that the server supports.
      */
-    private void respondOPTIONS() {
-        print_writer.println(getHeader(WORKING_OKAY.toString(), HTML.toString(), 0));
-        print_writer.println(getHTMLPage(OPTIONS.toString(), ""));
+    private void sendOPTIONS() {
+        String page = "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\"><html>"
+                + "<head><title> Server-Supported HTTP Methods</title></head>"
+                + "<body><h1>HTTP methods which the server serves</h1><p>HEAD</p><p>GET</p><p>DELETE</p><p>OPTIONS</p></body>"
+                + "</html>";
+
+        print_writer.println(getHeader(WORKING_OKAY.toString(), HTML.toString(), page.length()));
+
+        print_writer.println(page);
 
         log_file.logRespond(WORKING_OKAY.toString(), conn.getInetAddress());
     }
@@ -200,8 +188,13 @@ public class Responder {
      * @param resource_name the name of the not-found file from the client.
      */
     private void sendNotFound(String resource_name) {
-        String page = getHTMLPage(NOT_FOUND.toString(), resource_name);
-        print_writer.println(getHeader(NOT_FOUND.toString(), HTML.toString(), page.length()));
+        String page = "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\"><html>"
+                + "<head><title>" + NOT_FOUND.toString() + "</title></head>"
+                + "<body><h1>" + NOT_FOUND.toString() + "</h1><p>The requested URL " + resource_name + " was not found on this server.</p></body>"
+                + "</html>";
+
+        print_writer.println(getHeader(NOT_FOUND.toString(), getFileExtension(resource_name), page.length()));
+
         print_writer.println(page);
 
         log_file.logRespond(NOT_FOUND.toString(), conn.getInetAddress());
@@ -247,7 +240,7 @@ public class Responder {
                 respondDELETE(request_header[1]);
                 break;
             case OPTIONS:
-                respondOPTIONS();
+                sendOPTIONS();
             default:
                 sendNotImplemented(request_code);
         }
