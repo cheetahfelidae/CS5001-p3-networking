@@ -5,7 +5,7 @@
  */
 public class WebServerMain {
     private static final String DEFAULT_LOG_FILE = System.getProperty("user.dir") + "/log";
-    private static final int DEFAULT_NUM_CLIENTS = Integer.MAX_VALUE;
+    private static final int DEFAULT_MAX_NUM_CLIENTS = Integer.MAX_VALUE;
 
     /**
      * Create new server.
@@ -17,7 +17,7 @@ public class WebServerMain {
      */
     public static void main(String[] args) {
         try {
-            new WebServer(args[0], Integer.parseInt(args[1]), DEFAULT_LOG_FILE, DEFAULT_NUM_CLIENTS);
+            new WebServer(args[0], Integer.parseInt(args[1]), DEFAULT_LOG_FILE, DEFAULT_MAX_NUM_CLIENTS);
         } catch (Exception e) {
             System.out.println("Usage: java WebServerMain <document_root> <port>");
         }

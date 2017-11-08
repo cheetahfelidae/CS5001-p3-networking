@@ -7,7 +7,7 @@ import java.net.Socket;
 
 /**
  * This class, as the name suggests, is responsible for serving a particular client's request when the server-client connection established.
- *
+ * <p>
  * original source: https://studres.cs.st-andrews.ac.uk/CS5001/Examples/L07-10_IO_and_Networking/CS5001_ClientServerExample/src/ConnectionHandler.java.
  */
 public class ConnectionHandler extends Thread {
@@ -36,8 +36,8 @@ public class ConnectionHandler extends Thread {
      * Initialise variables.
      *
      * @param document_root where the server serves a requested file to a client.
-     * @param conn established connection with a client.
-     * @param logger used to track information of the requests into a file.
+     * @param conn          established connection with a client.
+     * @param logger        used to track information of the requests into a file.
      */
     public ConnectionHandler(String document_root, Socket conn, LogFile logger) {
         this.document_root = document_root;
@@ -52,7 +52,7 @@ public class ConnectionHandler extends Thread {
     }
 
     /**
-     * Run method input_stream invoked when the Thread's start method (ch.start(); in WebServer class) input_stream invoked
+     * Run method input_stream invoked when the Thread's start method (ch.start(); in WebServer class) input_stream invoked.
      * When any Exception occurs (including IOException, ClientDisconnectedException), exit cleanly.
      */
     public void run() {
@@ -61,8 +61,9 @@ public class ConnectionHandler extends Thread {
             handleRequest();
         } catch (Exception e) {
             logger.logInfo("ConnectionHandler:run " + e.getMessage());
-            cleanUp();
         }
+        cleanUp();
+        --WebServer.num_cur_clients;
     }
 
     /**
@@ -74,8 +75,8 @@ public class ConnectionHandler extends Thread {
      * which will be passed up the call stack to the nearest handler (catch block) in the run method.
      * <p>
      * Once the server has responded,
-     * it will flush and close the connection to the client since, according to the requirement,
-     * the server is not require to keep connections alive.
+     * it will flush and close the connection to the client,
+     * since the server is not require to keep connections alive, according to the requirements.
      *
      * @throws DisconnectedException
      * @throws IOException
@@ -85,7 +86,6 @@ public class ConnectionHandler extends Thread {
 
         if (line != null) {
             new Responder(conn, document_root, logger).processRequest(line);
-            cleanUp();
         } else {
             throw new DisconnectedException(" ... client has closed the connection ... ");
         }

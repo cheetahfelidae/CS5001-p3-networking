@@ -11,6 +11,8 @@ import java.util.logging.Logger;
  * original source: https://studres.cs.st-andrews.ac.uk/CS5001/Examples/L07-10_IO_and_Networking/CS5001_ClientServerExample/src/Server.java.
  */
 public class WebServer {
+    public static int num_cur_clients = 0;
+
     /**
      * 1. The server listen for client connection requests on on a specified port and wait until client requests a connection, then returns connection (socket).
      * 2. Create new handler for this connection (as a new thread to support multiple concurrent client connection request).
@@ -23,7 +25,7 @@ public class WebServer {
      * @param document_root path where the server serves a requested file to a client.
      * @param port          socket port which the server will be listening to.
      */
-    public WebServer(String document_root, int port, String log_path, int num_clients) {
+    public WebServer(String document_root, int port, String log_path, int max_num_clients) {
         ServerSocket sever_socket;
         LogFile logFile;
 
@@ -36,8 +38,12 @@ public class WebServer {
                 Socket conn = sever_socket.accept();
                 logFile.logInfo("WebServer got new connection request from " + conn.getInetAddress());
 
-                ConnectionHandler ch = new ConnectionHandler(document_root, conn, logFile);
-                ch.start();
+                if (num_cur_clients < max_num_clients) {
+                    num_cur_clients++;
+                    new ConnectionHandler(document_root, conn, logFile).start();
+                } else {
+                    logFile.logWarning("The number of the client connection requests is exceeding now!!");
+                }
             }
         } catch (IOException ioe) {
             Logger.getLogger(WebServer.class.getName()).severe("Ooops " + ioe.getMessage());
