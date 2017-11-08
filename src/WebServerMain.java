@@ -4,8 +4,14 @@
  * original source: https://studres.cs.st-andrews.ac.uk/CS5001/Examples/L07-10_IO_and_Networking/CS5001_ClientServerExample/src/ServerMain.java.
  */
 public class WebServerMain {
+    /**
+     * This is used to index command-line argument variables instead of using numeric numbers due to magic number issue.
+     */
+    private static final int FIRST = 0;
+    private static final int SECOND = 1;
+
     private static final String DEFAULT_LOG_FILE = System.getProperty("user.dir") + "/log";
-    private static final int DEFAULT_MAX_NUM_CLIENTS = Integer.MAX_VALUE;
+    private static final int DEFAULT_MAX_CLIENTS = Integer.MAX_VALUE;
 
     /**
      * Create new server.
@@ -17,7 +23,7 @@ public class WebServerMain {
      */
     public static void main(String[] args) {
         try {
-            new WebServer(args[0], Integer.parseInt(args[1]), DEFAULT_LOG_FILE, DEFAULT_MAX_NUM_CLIENTS);
+            new WebServer(args[FIRST], Integer.parseInt(args[SECOND]), DEFAULT_LOG_FILE, DEFAULT_MAX_CLIENTS);
         } catch (Exception e) {
             System.out.println("Usage: java WebServerMain <document_root> <port>");
         }
