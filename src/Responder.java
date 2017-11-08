@@ -1,3 +1,4 @@
+import constants.FileType;
 import constants.RequestCode;
 import constants.ResponseCode;
 
@@ -10,6 +11,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
 
+import static constants.FileType.*;
 import static constants.RequestCode.OPTIONS;
 import static constants.ResponseCode.*;
 
@@ -18,7 +20,6 @@ import static constants.ResponseCode.*;
  * There is only one accessible (public) method which is processRequest().
  */
 public class Responder {
-    private static final String TEXT_HTML = "text/html";
     private static final String CR_LF = "\r\n"; // use of <CR><LF> to delimit header fields and header from content.
     private static final int CHUNK_SIZE = 1500;
 
@@ -103,12 +104,45 @@ public class Responder {
         File resource = new File(document_root + resource_name);
 
         if (resource.exists()) {
-            print_writer.println(getHeader(WORKING_OKAY.toString(), TEXT_HTML, resource.length()));
+            print_writer.println(getHeader(WORKING_OKAY.toString(), HTML.toString(), resource.length()));
 
             log_file.logRespond(WORKING_OKAY.toString(), conn.getInetAddress());
         } else {
             sendNotFound(resource_name);
         }
+    }
+
+    /**
+     * Get the file extension.
+     * This method supports for the case that a directory may have a '.', but the filename itself doesn't (e.g. /path/to.a/file).
+     * <p>
+     * original resource: https://stackoverflow.com/questions/3571223/how-do-i-get-the-file-extension-of-a-file-in-java.
+     *
+     * @param file_name the name of the requested file.
+     * @return the extension of the file.
+     */
+    private String getFileExtension(String file_name) {
+        String extension = "";
+
+        int i = file_name.lastIndexOf('.'),
+                p = Math.max(file_name.lastIndexOf('/'), file_name.lastIndexOf('\\'));
+
+        if (i > p) {
+            extension = file_name.substring(i + 1);
+        }
+
+        switch (FileType.convert(extension)) {
+            case HTML:
+                return "text/html";
+            case GIF:
+                return GIF.toString();
+            case JPEG:
+                return JPEG.toString();
+            case PNG:
+                return PNG.toString();
+        }
+
+        return "";
     }
 
     /**
@@ -121,7 +155,7 @@ public class Responder {
         File resource = new File(document_root + resource_name);
 
         if (resource.exists()) {
-            print_writer.println(getHeader(WORKING_OKAY.toString(), TEXT_HTML, resource.length()));
+            print_writer.println(getHeader(WORKING_OKAY.toString(), getFileExtension(resource_name), resource.length()));
             sendResource(document_root + resource_name);
 
             log_file.logRespond(WORKING_OKAY.toString(), conn.getInetAddress());
@@ -140,7 +174,7 @@ public class Responder {
         File resource = new File(document_root + resource_name);
 
         if (resource.exists()) {
-            print_writer.println(getHeader(WORKING_OKAY.toString(), TEXT_HTML, 0));
+            print_writer.println(getHeader(WORKING_OKAY.toString(), HTML.toString(), 0));
 
             log_file.logWarning(resource_name +
                     (resource.delete() ? " HAS BEEN DELETED SUCCESSFULLY" : " HAS FAILED TO BE DELETED SUCCESSFULLY"));
@@ -153,7 +187,7 @@ public class Responder {
      * Extension: Returns the HTTP methods that the server supports.
      */
     private void respondOPTIONS() {
-        print_writer.println(getHeader(WORKING_OKAY.toString(), TEXT_HTML, 0));
+        print_writer.println(getHeader(WORKING_OKAY.toString(), HTML.toString(), 0));
         print_writer.println(getHTMLPage(OPTIONS.toString(), ""));
 
         log_file.logRespond(WORKING_OKAY.toString(), conn.getInetAddress());
@@ -167,7 +201,7 @@ public class Responder {
      */
     private void sendNotFound(String resource_name) {
         String page = getHTMLPage(NOT_FOUND.toString(), resource_name);
-        print_writer.println(getHeader(NOT_FOUND.toString(), TEXT_HTML, page.length()));
+        print_writer.println(getHeader(NOT_FOUND.toString(), HTML.toString(), page.length()));
         print_writer.println(page);
 
         log_file.logRespond(NOT_FOUND.toString(), conn.getInetAddress());
@@ -180,7 +214,7 @@ public class Responder {
      * @param unrecognised_code code which has never been implemented in the server.
      */
     private void sendNotImplemented(String unrecognised_code) {
-        print_writer.println(getHeader(NOT_IMPLEMENTED.toString(), TEXT_HTML, 0));
+        print_writer.println(getHeader(NOT_IMPLEMENTED.toString(), HTML.toString(), 0));
 
         log_file.logInfo("REQUEST CODE " + unrecognised_code + " IS NOT SUPPORTED BY THE SERVER");
         log_file.logRespond(NOT_IMPLEMENTED.toString(), conn.getInetAddress());
