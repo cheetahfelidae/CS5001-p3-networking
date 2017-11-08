@@ -35,11 +35,11 @@ public class ConnectionHandler extends Thread {
     /**
      * Initialise variables.
      *
-     * @param document_root where the server serves a requested file to a client.
      * @param conn          established connection with a client.
+     * @param document_root where the server serves a requested file to a client.
      * @param logger        used to track information of the requests into a file.
      */
-    public ConnectionHandler(String document_root, Socket conn, LogFile logger) {
+    public ConnectionHandler(Socket conn, String document_root, LogFile logger) {
         this.document_root = document_root;
         this.conn = conn;
         try {
@@ -57,13 +57,15 @@ public class ConnectionHandler extends Thread {
      */
     public void run() {
         logger.logInfo("new ConnectionHandler thread started .... ");
+
         try {
             handleRequest();
         } catch (Exception e) {
             logger.logInfo("ConnectionHandler:run " + e.getMessage());
         }
+
         cleanUp();
-        --WebServer.num_cur_clients;
+        WebServer.setNumCurClients(WebServer.getNumCurClients() - 1);
     }
 
     /**

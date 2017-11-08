@@ -11,14 +11,20 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
 
-import static constants.FileType.*;
-import static constants.ResponseCode.*;
+import static constants.FileType.GIF;
+import static constants.FileType.JPEG;
+import static constants.FileType.PNG;
+import static constants.RequestCode.OPTIONS;
+import static constants.ResponseCode.NOT_FOUND;
+import static constants.ResponseCode.NOT_IMPLEMENTED;
+import static constants.ResponseCode.WORKING_OKAY;
 
 /**
  * This class handles with HTTP requests which comprises of two components: header and document body.
  * There is only one accessible (public) method which is processRequest().
  */
 public class Responder {
+    private static final String TEXT_HTML = "text/html";
     private static final String CR_LF = "\r\n"; // use of <CR><LF> to delimit header fields and header from content.
     private static final int CHUNK_SIZE = 1500;
 
@@ -28,11 +34,13 @@ public class Responder {
     private LogFile log_file;
 
     /**
+     * Initialise variables: connection socket, path of the document and path of the log file.
+     *
      * @param conn          established connection with a client.
      * @param document_root a path where the server serves a document to a client.
-     * @throws IOException
+     *                      @param logger used to track information of the requests into a file.
      */
-    public Responder(Socket conn, String document_root, LogFile logger) throws IOException {
+    public Responder(Socket conn, String document_root, LogFile logger) {
         this.conn = conn;
         this.document_root = document_root;
         this.log_file = logger;
@@ -47,9 +55,9 @@ public class Responder {
      * @return
      */
     private String getHeader(String response_code, String content_type, long resource_length) {
-        return "HTTP/1.1 " + response_code + CR_LF +
-                "Content-Type: " + content_type + CR_LF +
-                "Content-Length: " + resource_length + CR_LF;
+        return "HTTP/1.1 " + response_code + CR_LF
+                + "Content-Type: " + content_type + CR_LF
+                + "Content-Length: " + resource_length + CR_LF;
     }
 
     /**
@@ -115,13 +123,14 @@ public class Responder {
 
         switch (FileType.convert(extension)) {
             case HTML:
-                return "text/html";
+                return TEXT_HTML;
             case GIF:
                 return GIF.toString();
             case JPEG:
                 return JPEG.toString();
             case PNG:
                 return PNG.toString();
+            default:
         }
 
         return "";
@@ -158,8 +167,8 @@ public class Responder {
         if (resource.exists()) {
             print_writer.println(getHeader(WORKING_OKAY.toString(), getFileExtension(resource_name), 0));
 
-            log_file.logWarning(resource_name +
-                    (resource.delete() ? " HAS BEEN DELETED SUCCESSFULLY" : " HAS FAILED TO BE DELETED SUCCESSFULLY"));
+            log_file.logWarning(resource_name
+                    + (resource.delete() ? " HAS BEEN DELETED SUCCESSFULLY" : " HAS FAILED TO BE DELETED SUCCESSFULLY"));
         } else {
             sendNotFound(resource_name);
         }
@@ -207,7 +216,7 @@ public class Responder {
      * @param unrecognised_code code which has never been implemented in the server.
      */
     private void sendNotImplemented(String unrecognised_code) {
-        print_writer.println(getHeader(NOT_IMPLEMENTED.toString(), HTML.toString(), 0));
+        print_writer.println(getHeader(NOT_IMPLEMENTED.toString(), TEXT_HTML, 0));
 
         log_file.logInfo("REQUEST CODE " + unrecognised_code + " IS NOT SUPPORTED BY THE SERVER");
         log_file.logRespond(NOT_IMPLEMENTED.toString(), conn.getInetAddress());
@@ -219,7 +228,7 @@ public class Responder {
      * If the received request is not supported, then send back 501 File Not Implemented response to the client.
      *
      * @param request request message from a client.
-     * @throws IOException
+     * @throws IOException is thrown in case of connection failed.
      */
     public void processRequest(String request) throws IOException {
         print_writer = new PrintWriter(this.conn.getOutputStream(), true);
